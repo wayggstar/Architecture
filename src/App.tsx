@@ -14,13 +14,11 @@ import {
 } from "lucide-react";
 import JSZip from "jszip";
 
-// ─── Types ────────────────────────────────────────────────────────────────────
 interface ProjectFile {
   path: string;
   content: string;
 }
 
-// ─── Crypto Util (AES-GCM) ───────────────────────────────────────────────────
 const enc = new TextEncoder();
 const dec = new TextDecoder();
 
@@ -100,7 +98,6 @@ async function loadApiKey(): Promise<string | null> {
   }
 }
 
-// ─── Groq API ─────────────────────────────────────────────────────────────────
 const GROQ_MODEL = "llama-3.3-70b-versatile";
 const GROQ_URL = "https://api.groq.com/openai/v1/chat/completions";
 
@@ -114,7 +111,7 @@ async function callGroq(apiKey: string, messages: any[]): Promise<string> {
     body: JSON.stringify({
       model: GROQ_MODEL,
       messages,
-      temperature: 0.1, // 코드 정확성 및 엄격한 규칙 준수를 위한 낮은 온도 유지
+      temperature: 0.1,
       max_tokens: 4000,
     }),
   });
@@ -130,7 +127,6 @@ async function callGroq(apiKey: string, messages: any[]): Promise<string> {
   return data.choices[0]?.message?.content ?? "";
 }
 
-// ─── Light-weight Paper API Context (포괄적 Modern 표준 명세) ───────────────────
 const LIGHT_PAPER_CONTEXT = `
 === Paper API Compact Specifications (Strict Modern Architecture) ===
 1. Plugin Base: Extend org.bukkit.plugin.java.JavaPlugin. Use onEnable(), onDisable().
@@ -148,7 +144,6 @@ const LIGHT_PAPER_CONTEXT = `
    - Separate messages into 'src/main/resources/lang/ko_kr.yml' and 'src/main/resources/lang/en_us.yml'. Load via YamlConfiguration.
 `;
 
-// ─── Plugin Generator ─────────────────────────────────────────────────────────
 async function generatePlugin(
   apiKey: string,
   params: {
@@ -210,7 +205,6 @@ STRICT CODE GENERATION RULES:
 
   const rawCode = await callGroq(apiKey, codeMessages);
 
-  // JSON 추출 안정화 클리닝 작업
   let cleanJson = rawCode.trim();
   if (cleanJson.startsWith("```")) {
     cleanJson = cleanJson.replace(/^```json\s*/i, "").replace(/\s*```$/, "");
@@ -232,7 +226,6 @@ STRICT CODE GENERATION RULES:
   return { analysis, files };
 }
 
-// ─── i18n ─────────────────────────────────────────────────────────────────────
 const i18n = {
   ko: {
     emptyDescriptionAlert: "프로젝트 요구사항을 상세히 기술해주세요.",
@@ -276,7 +269,6 @@ const i18n = {
   },
 };
 
-// ─── App ──────────────────────────────────────────────────────────────────────
 export default function App() {
   const [siteLang, setSiteLang] = useState<"ko" | "en">("ko");
   const [version, setVersion] = useState("1.21.4");
@@ -366,7 +358,6 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans">
-      {/* API Key Modal */}
       {showApiModal && (
         <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
           <div className="bg-slate-900 border border-slate-800 rounded-xl p-6 w-full max-w-md shadow-2xl">
@@ -414,7 +405,6 @@ export default function App() {
         </div>
       )}
 
-      {/* Header */}
       <header className="border-b border-slate-800 bg-slate-900/40 px-6 py-4 flex items-center justify-between backdrop-blur">
         <div className="flex items-center gap-3">
           <Layers size={18} className="text-emerald-400" />
@@ -450,9 +440,7 @@ export default function App() {
         </div>
       </header>
 
-      {/* Main Workspace */}
       <main className="flex-1 grid grid-cols-1 lg:grid-cols-12 overflow-hidden h-[calc(100vh-65px)]">
-        {/* Input Panel */}
         <section className="lg:col-span-4 border-r border-slate-800 p-5 flex flex-col gap-4 overflow-y-auto bg-slate-900/20">
           <div className="flex flex-col gap-1">
             <label className="text-[10px] uppercase font-semibold text-slate-400 tracking-wider">
@@ -532,7 +520,6 @@ export default function App() {
           </button>
         </section>
 
-        {/* Workspace Display */}
         <section className="lg:col-span-8 flex flex-col overflow-hidden bg-slate-950">
           {!loading && files.length === 0 && (
             <div className="flex-1 flex flex-col items-center justify-center text-slate-600 gap-2">
@@ -554,7 +541,6 @@ export default function App() {
 
           {!loading && files.length > 0 && (
             <div className="flex-1 flex overflow-hidden h-full">
-              {/* File Workspace Navigator */}
               <div className="w-56 border-r border-slate-900 flex flex-col bg-slate-900/10">
                 <div className="p-3 uppercase text-[9px] font-bold text-slate-500 tracking-widest border-b border-slate-900/60 flex items-center gap-1.5">
                   <Folder size={11} />
@@ -584,7 +570,6 @@ export default function App() {
                 </div>
               </div>
 
-              {/* Advanced Code Editor Frame */}
               <div className="flex-1 flex flex-col overflow-hidden">
                 <div className="px-4 py-2 bg-slate-900/20 border-b border-slate-900 text-[11px] font-mono flex justify-between items-center text-slate-400">
                   <span className="truncate text-slate-500">

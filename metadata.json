@@ -1,0 +1,5 @@
+{
+  "name": "LogMiro"
+  "description": "Intelligent log analysis and bug detection powered by Gemini.",
+  "requestFramePermissions": []
+}

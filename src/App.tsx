@@ -498,7 +498,6 @@ export default function App() {
               <option value="1.21.4">
                 Paper 1.21.4 (JDK 21 / Modern Components)
               </option>
-              <option value="1.20.4">Paper 1.20.4 (JDK 17 / Stable PDC)</option>
             </select>
           </div>
 

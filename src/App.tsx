@@ -81,8 +81,8 @@ async function decryptData(base64: string, password: string): Promise<string> {
   return dec.decode(decrypted);
 }
 
-const STORAGE_KEY = "miro_groq_key";
-const MASTER_PW = "miro-local-v1";
+const STORAGE_KEY = "groq_key";
+const MASTER_PW = "local-v1";
 
 async function saveApiKey(apiKey: string) {
   const encrypted = await encryptData(apiKey, MASTER_PW);
@@ -453,7 +453,7 @@ export default function App() {
         <div className="flex items-center gap-3">
           <Layers size={18} className="text-emerald-400" />
           <h1 className="text-sm font-bold tracking-wider uppercase">
-            Miro<span className="text-emerald-400">Architect</span> V2.0
+            <span className="text-emerald-400">Architect</span>
           </h1>
         </div>
         <div className="flex items-center gap-3">
@@ -568,7 +568,7 @@ export default function App() {
             <div className="flex-1 flex flex-col items-center justify-center text-slate-600 gap-2">
               <Terminal size={28} className="text-slate-900 animate-pulse" />
               <p className="text-xs font-mono tracking-wide text-slate-500">
-                Miro Engine Status: Idling...
+                Engine Status: Idling...
               </p>
             </div>
           )}

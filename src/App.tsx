@@ -81,8 +81,8 @@ async function decryptData(base64: string, password: string): Promise<string> {
   return dec.decode(decrypted);
 }
 
-const STORAGE_KEY = "groq_key";
-const MASTER_PW = "local-v1";
+const STORAGE_KEY = "architect_groq_key";
+const MASTER_PW = "architect-local-v1";
 
 async function saveApiKey(apiKey: string) {
   const encrypted = await encryptData(apiKey, MASTER_PW);
@@ -145,6 +145,45 @@ const LIGHT_PAPER_CONTEXT = `
    - Separate messages into 'src/main/resources/lang/ko_kr.yml' and 'src/main/resources/lang/en_us.yml'. Load via YamlConfiguration.
 `;
 
+function robustJsonParse(rawText: string): any {
+  let jsonString = rawText.trim();
+
+  if (jsonString.startsWith("```")) {
+    jsonString = jsonString.replace(/^```json\s*/i, "").replace(/\s*```$/, "");
+  }
+
+  const jsonMatch = jsonString.match(/\[[\s\S]*\]/);
+  if (!jsonMatch) {
+    throw new Error("Target response is not a structured JSON array.");
+  }
+
+  let cleanTarget = jsonMatch[0];
+
+  try {
+    return JSON.parse(cleanTarget);
+  } catch (e) {
+    console.warn(
+      "Standard JSON parse failed, initiating sanitization regex layers...",
+    );
+
+    cleanTarget = cleanTarget.replace(
+      /[\u0000-\u001F\u007F-\u009F]/g,
+      (match) => {
+        if (match === "\n") return "\\n";
+        if (match === "\r") return "\\r";
+        if (match === "\t") return "\\t";
+        return "";
+      },
+    );
+
+    try {
+      return JSON.parse(cleanTarget);
+    } catch (finalError: any) {
+      throw new Error(`JSON Structural Syntax Error: ${finalError.message}`);
+    }
+  }
+}
+
 async function generatePlugin(
   apiKey: string,
   params: {
@@ -199,7 +238,7 @@ STRICT CODE GENERATION RULES:
 6. AUTOMATIC BUILD SCRIPTS: You MUST always generate the following 3 build environment files:
    - 'pom.xml' or 'build.gradle' (with settings.gradle) that accurately sets up the Paper API dependency for version ${version}.
    - '.github/workflows/build.yml' containing a standard GitHub Actions workflow that sets up JDK ${jdk}, grants permissions to gradlew/mvn, runs the package build, and uses 'softprops/action-gh-release@v2' to upload the resulting .jar file to GitHub Releases.
-7. JSON Format: [{"path": "string", "content": "string"}]`,
+7. JSON Format Rule: Escape inside string properties heavily. Newlines within source code strings MUST be escaped as "\\n" and quotes as "\\\"". Format: [{"path": "string", "content": "string"}]`,
     },
     {
       role: "user",
@@ -209,25 +248,19 @@ STRICT CODE GENERATION RULES:
 
   const rawCode = await callGroq(apiKey, codeMessages);
 
-  let cleanJson = rawCode.trim();
-  if (cleanJson.startsWith("```")) {
-    cleanJson = cleanJson.replace(/^```json\s*/i, "").replace(/\s*```$/, "");
-  }
-
-  const jsonMatch = cleanJson.match(/\[[\s\S]*\]/);
-  if (!jsonMatch)
+  try {
+    const files: ProjectFile[] = robustJsonParse(rawCode);
+    onStage(
+      lang === "ko" ? "✅ 프로젝트 구축 완료!" : "✅ Project Structuring Done!",
+    );
+    return { analysis, files };
+  } catch (err: any) {
     throw new Error(
       lang === "ko"
-        ? "AI가 올바른 프로젝트 파일 구조(JSON)를 반환하지 못했습니다."
-        : "Failed to parse workspace JSON from AI.",
+        ? `AI 데이터 파싱 실패: 구조적 보정이 불가능한 깨진 포맷입니다. 기획 설명란의 문장 부호들을 조절한 뒤 재생성해 주세요. (${err.message})`
+        : `Workspace compilation aborted due to unrecoverable JSON format. (${err.message})`,
     );
-
-  const files: ProjectFile[] = JSON.parse(jsonMatch[0]);
-  onStage(
-    lang === "ko" ? "✅ 프로젝트 구축 완료!" : "✅ Project Structuring Done!",
-  );
-
-  return { analysis, files };
+  }
 }
 
 const i18n = {
@@ -539,7 +572,7 @@ export default function App() {
           </div>
 
           {error && (
-            <div className="bg-red-500/10 border border-red-900/50 rounded-md p-3 text-xs text-red-400 font-mono">
+            <div className="bg-red-500/10 border border-red-900/50 rounded-md p-3 text-xs text-red-400 font-mono whitespace-pre-line">
               ⚠ {error}
             </div>
           )}
@@ -645,7 +678,7 @@ export default function App() {
                         {architectureGuide}
                       </div>
                     )}
-                  <pre className="whitespace-pre text-emerald-400/80">
+                  <pre className="whitespace-pre text-emerald-400/80 text-wrap">
                     {selectedFile?.content}
                   </pre>
                 </div>
